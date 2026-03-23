@@ -1,0 +1,42 @@
+&ELPH_MANAGER
+  ! === File paths ===
+  prefix           = 'Al'
+  outdir           = './tmp'
+  pw_input_file    = 'scf.in'
+  ph_input_file    = 'ph.in'
+  pw_output_file   = 'scf.out'
+  ph_output_file   = 'ph.out'
+  elph_output_file = 'elph.out'
+
+  ! === Executables ===
+  ! Serial run:
+  pw_command  = 'pw.x'
+  ph_command  = 'ph.x'
+  mpi_prefix  = ''
+  !
+  ! MPI example (uncomment and adjust):
+  ! mpi_prefix  = 'mpirun -np 8'
+
+  ! === Electron-phonon mode ===
+  ! Options: 'simple', 'interpolated', 'lambda_tetra', 'gamma_tetra', 'epa', 'ahc'
+  electron_phonon = 'lambda_tetra'
+
+  ! === k-grid for elph (0 = use values from ph_input_file) ===
+  ! Use a denser k-grid than the phonon q-grid for better sampling:
+  nk1 = 16
+  nk2 = 16
+  nk3 = 16
+  k1  = 0
+  k2  = 0
+  k3  = 0
+
+  ! === Smearing (for 'simple' and 'interpolated' modes) ===
+  el_ph_nsigma = 10
+  el_ph_sigma  = 0.02
+
+  ! === Workflow control ===
+  force_rerun_scf   = .false.   ! Skip SCF if prefix.save/ exists
+  force_rerun_ph    = .false.   ! Skip phonons if dvscf exists
+  force_rerun_elph  = .false.   ! Skip elph if lambda exists
+  verbose           = .true.
+/

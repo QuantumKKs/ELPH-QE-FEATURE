@@ -1,0 +1,13 @@
+Aluminum phonons on 4x4x4 q-grid
+&INPUTPH
+  prefix       = 'Al'
+  outdir       = './tmp'
+  fildyn       = 'Al.dyn'
+  tr2_ph       = 1.0d-14
+  ldisp        = .true.
+  nq1          = 4
+  nq2          = 4
+  nq3          = 4
+  trans        = .true.
+  electron_phonon = ''
+/
