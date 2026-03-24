@@ -171,6 +171,57 @@ CONTAINS
   END SUBROUTINE run_phonons_split
   !
   !---------------------------------------------------------------------
+  SUBROUTINE run_q2r(q2r_input_file, ierr)
+  !---------------------------------------------------------------------
+    USE elph_manager_input, ONLY : verbose
+    USE io_global,          ONLY : stdout
+    CHARACTER(LEN=256), INTENT(IN)  :: q2r_input_file
+    INTEGER,            INTENT(OUT) :: ierr
+    CHARACTER(LEN=1024) :: cmd
+    cmd = 'q2r.x -in '//TRIM(q2r_input_file)//' > q2r.out 2>&1'
+    CALL run_command(TRIM(cmd), 'Phase 3a: Force constants (q2r.x)', ierr)
+    IF (ierr /= 0) CALL errore('run_q2r', &
+         'q2r.x failed. Check q2r.out', ierr)
+  END SUBROUTINE run_q2r
+  !
+  !---------------------------------------------------------------------
+  SUBROUTINE run_matdyn(matdyn_input_file, ierr)
+  !---------------------------------------------------------------------
+    USE elph_manager_input, ONLY : matdyn_output_file
+    USE io_global,          ONLY : stdout
+    CHARACTER(LEN=256), INTENT(IN)  :: matdyn_input_file
+    INTEGER,            INTENT(OUT) :: ierr
+    CHARACTER(LEN=1024) :: cmd
+    cmd = 'matdyn.x -in '//TRIM(matdyn_input_file)//' > '// &
+          TRIM(matdyn_output_file)//' 2>&1'
+    CALL run_command(TRIM(cmd), 'Phase 3b: Phonon dispersion (matdyn.x)', ierr)
+    IF (ierr /= 0) CALL errore('run_matdyn', &
+         'matdyn.x failed. Check '//TRIM(matdyn_output_file), ierr)
+  END SUBROUTINE run_matdyn
+  !
+  !---------------------------------------------------------------------
+  SUBROUTINE run_bands(pw_bands_file, bandspp_file, ierr)
+  !---------------------------------------------------------------------
+    USE elph_manager_input, ONLY : bands_output_file, bandspp_output_file
+    USE io_global,          ONLY : stdout
+    CHARACTER(LEN=256), INTENT(IN)  :: pw_bands_file, bandspp_file
+    INTEGER,            INTENT(OUT) :: ierr
+    CHARACTER(LEN=1024) :: cmd
+    ! pw.x bands
+    cmd = 'pw.x -in '//TRIM(pw_bands_file)//' > '// &
+          TRIM(bands_output_file)//' 2>&1'
+    CALL run_command(TRIM(cmd), 'Phase 5a: Band structure (pw.x)', ierr)
+    IF (ierr /= 0) CALL errore('run_bands', &
+         'pw.x bands failed. Check '//TRIM(bands_output_file), ierr)
+    ! bands.x post-processing
+    cmd = 'bands.x -in '//TRIM(bandspp_file)//' > '// &
+          TRIM(bandspp_output_file)//' 2>&1'
+    CALL run_command(TRIM(cmd), 'Phase 5b: Bands post-processing (bands.x)', ierr)
+    IF (ierr /= 0) CALL errore('run_bands', &
+         'bands.x failed. Check '//TRIM(bandspp_output_file), ierr)
+  END SUBROUTINE run_bands
+  !
+  !---------------------------------------------------------------------
   SUBROUTINE run_elph(ph_elph_input_file, ierr)
   !---------------------------------------------------------------------
     !

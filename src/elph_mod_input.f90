@@ -75,6 +75,44 @@ MODULE elph_manager_input
   ! For a 2x2x2 grid of FCC Al, nq_irr = 3.
   ! Run ph.x once manually or check QE output to find this number.
   !
+  ! --- Optional validation phases ---
+  LOGICAL :: compute_matdyn = .FALSE.
+  ! If .TRUE., run matdyn.x after phonons to compute phonon dispersion.
+  ! Requires matdyn_qpath_file to be set.
+
+  CHARACTER(LEN=256) :: matdyn_qpath_file  = ''
+  ! File containing the q-path for matdyn.x phonon dispersion.
+  ! Format: same as QE K_POINTS crystal_b card.
+  ! Example for FCC Al:
+  !   5
+  !   0.000 0.000 0.000  30  ! Gamma
+  !   0.500 0.000 0.500  30  ! X
+  !   0.500 0.250 0.750  10  ! W
+  !   0.375 0.375 0.750  30  ! K
+  !   0.000 0.000 0.000  30  ! Gamma
+  !   0.500 0.500 0.500   1  ! L
+
+  CHARACTER(LEN=256) :: matdyn_output_file = 'matdyn.out'
+
+  LOGICAL :: compute_bands = .FALSE.
+  ! If .TRUE., run pw.x (bands) + bands.x after SCF.
+  ! Requires bands_kpath_file to be set.
+
+  CHARACTER(LEN=256) :: bands_kpath_file  = ''
+  ! File containing the k-path for pw.x bands calculation.
+  ! Format: K_POINTS crystal_b card content only (no header).
+  ! Example for FCC Al (Gamma-X-W-K-Gamma-L):
+  !   6
+  !   0.000 0.000 0.000  30
+  !   0.500 0.000 0.500  30
+  !   0.500 0.250 0.750  10
+  !   0.375 0.375 0.750  30
+  !   0.000 0.000 0.000  40
+  !   0.500 0.500 0.500   1
+
+  CHARACTER(LEN=256) :: bands_output_file   = 'bands.out'
+  CHARACTER(LEN=256) :: bandspp_output_file = 'bandspp.out'
+  !
 CONTAINS
   !
   !---------------------------------------------------------------------
@@ -101,7 +139,11 @@ CONTAINS
          el_ph_nsigma, el_ph_sigma,               &
          force_rerun_scf, force_rerun_ph,         &
          force_rerun_elph, verbose,               &
-         ph_split_qpoints, nq_irr
+         ph_split_qpoints, nq_irr,               &
+         compute_matdyn, matdyn_qpath_file,      &
+         matdyn_output_file,                     &
+         compute_bands, bands_kpath_file,        &
+         bands_output_file, bandspp_output_file
     !
     IF (ionode) THEN
        !
@@ -126,8 +168,15 @@ CONTAINS
     CALL mp_bcast(force_rerun_ph,   ionode_id, world_comm)
     CALL mp_bcast(force_rerun_elph, ionode_id, world_comm)
     CALL mp_bcast(verbose,          ionode_id, world_comm)
-    CALL mp_bcast(ph_split_qpoints, ionode_id, world_comm)
-    CALL mp_bcast(nq_irr,           ionode_id, world_comm)
+    CALL mp_bcast(ph_split_qpoints,    ionode_id, world_comm)
+    CALL mp_bcast(nq_irr,              ionode_id, world_comm)
+    CALL mp_bcast(compute_matdyn,      ionode_id, world_comm)
+    CALL mp_bcast(matdyn_qpath_file,   ionode_id, world_comm)
+    CALL mp_bcast(matdyn_output_file,  ionode_id, world_comm)
+    CALL mp_bcast(compute_bands,       ionode_id, world_comm)
+    CALL mp_bcast(bands_kpath_file,    ionode_id, world_comm)
+    CALL mp_bcast(bands_output_file,   ionode_id, world_comm)
+    CALL mp_bcast(bandspp_output_file, ionode_id, world_comm)
     !
     IF (ionode .AND. verbose) THEN
        WRITE(stdout,'(/,5X,A)') REPEAT('-',50)
@@ -145,6 +194,12 @@ CONTAINS
        WRITE(stdout,'(5X,A,L1)') 'ph_split_qpoints  = ', ph_split_qpoints
        IF (ph_split_qpoints) &
           WRITE(stdout,'(5X,A,I4)') 'nq_irr            = ', nq_irr
+       WRITE(stdout,'(5X,A,L1)') 'compute_matdyn    = ', compute_matdyn
+       IF (compute_matdyn) &
+          WRITE(stdout,'(5X,A,A)') 'matdyn_qpath_file = ', TRIM(matdyn_qpath_file)
+       WRITE(stdout,'(5X,A,L1)') 'compute_bands     = ', compute_bands
+       IF (compute_bands) &
+          WRITE(stdout,'(5X,A,A)') 'bands_kpath_file  = ', TRIM(bands_kpath_file)
        WRITE(stdout,'(5X,A)')    REPEAT('-',50)
     END IF
     !
