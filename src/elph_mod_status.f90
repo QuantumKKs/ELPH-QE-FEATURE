@@ -26,9 +26,11 @@ MODULE elph_manager_status
   IMPLICIT NONE
   SAVE
   !
-  LOGICAL :: scf_done   = .FALSE.
-  LOGICAL :: dvscf_done = .FALSE.
-  LOGICAL :: elph_done  = .FALSE.
+  LOGICAL :: scf_done    = .FALSE.
+  LOGICAL :: dvscf_done  = .FALSE.
+  LOGICAL :: elph_done   = .FALSE.
+  LOGICAL :: matdyn_done = .FALSE.
+  LOGICAL :: bands_done  = .FALSE.
   !
 CONTAINS
   !
@@ -36,7 +38,8 @@ CONTAINS
   SUBROUTINE check_all_status()
   !---------------------------------------------------------------------
     !
-    USE elph_manager_input, ONLY : prefix, outdir, verbose
+    USE elph_manager_input, ONLY : prefix, outdir, verbose, &
+                                   compute_matdyn, compute_bands
     USE io_global,          ONLY : ionode, stdout
     !
     IMPLICIT NONE
@@ -90,21 +93,47 @@ CONTAINS
     ! ----------------------------------------------------------------
     elph_done = .FALSE.
     !
-    filename = TRIM(outdir)//'/lambda'
-    INQUIRE(FILE=TRIM(filename), EXIST=exst)
+    ! lambda file (simple/interpolated modes) — in current dir or outdir
+    INQUIRE(FILE='lambda', EXIST=exst)
     IF (exst) elph_done = .TRUE.
     !
     IF (.NOT. elph_done) THEN
-       filename = TRIM(outdir)//'/lambda.dat'
+       filename = TRIM(outdir)//'/lambda'
        INQUIRE(FILE=TRIM(filename), EXIST=exst)
        IF (exst) elph_done = .TRUE.
     END IF
     !
     IF (.NOT. elph_done) THEN
-       filename = TRIM(outdir)//'/'//TRIM(prefix)//'.a2F'
+       INQUIRE(FILE='lambda.dat', EXIST=exst)
+       IF (exst) elph_done = .TRUE.
+    END IF
+    !
+    ! prefix.a2F (EPA/tetra modes)
+    IF (.NOT. elph_done) THEN
+       filename = TRIM(prefix)//'.a2F'
        INQUIRE(FILE=TRIM(filename), EXIST=exst)
        IF (exst) elph_done = .TRUE.
     END IF
+    !
+    ! prefix.dyn1.elph.1 — written by 'simple' mode in current dir
+    IF (.NOT. elph_done) THEN
+       filename = TRIM(prefix)//'.dyn1.elph.1'
+       INQUIRE(FILE=TRIM(filename), EXIST=exst)
+       IF (exst) elph_done = .TRUE.
+    END IF
+    !
+    ! ----------------------------------------------------------------
+    ! Phase 3b: matdyn phonon dispersion
+    ! Key file: matdyn.freq
+    ! ----------------------------------------------------------------
+    INQUIRE(FILE='matdyn.freq', EXIST=matdyn_done)
+    !
+    ! ----------------------------------------------------------------
+    ! Phase 5: Electronic band structure
+    ! Key files: prefix.bands.dat.gnu or bands.dat.gnu
+    ! ----------------------------------------------------------------
+    INQUIRE(FILE=TRIM(prefix)//'.bands.dat.gnu', EXIST=bands_done)
+    IF (.NOT. bands_done) INQUIRE(FILE='bands.dat.gnu', EXIST=bands_done)
     !
     ! ----------------------------------------------------------------
     ! Report status
@@ -113,24 +142,28 @@ CONTAINS
        WRITE(stdout,'(/,5X,A)') REPEAT('-',50)
        WRITE(stdout,'(5X,A)')   '  Calculation status'
        WRITE(stdout,'(5X,A)')   REPEAT('-',50)
-       CALL report_phase('Phase 1 - SCF (pw.x)     ', scf_done)
-       CALL report_phase('Phase 2 - Phonons (ph.x) ', dvscf_done)
-       CALL report_phase('Phase 3 - Elph (ph.x)    ', elph_done)
+       CALL report_phase('Phase 1 - SCF (pw.x)          ', scf_done,   .TRUE.)
+       CALL report_phase('Phase 2 - Phonons (ph.x)      ', dvscf_done, .TRUE.)
+       CALL report_phase('Phase 3 - Matdyn (matdyn.x)   ', matdyn_done, compute_matdyn)
+       CALL report_phase('Phase 4 - Elph (ph.x)         ', elph_done,  .TRUE.)
+       CALL report_phase('Phase 5 - Bands (pw.x/bands.x)', bands_done, compute_bands)
        WRITE(stdout,'(5X,A)')   REPEAT('-',50)
     END IF
     !
   END SUBROUTINE check_all_status
   !
   !---------------------------------------------------------------------
-  SUBROUTINE report_phase(label, done)
+  SUBROUTINE report_phase(label, done, enabled)
   !---------------------------------------------------------------------
     !
     USE io_global, ONLY : stdout
     !
     CHARACTER(LEN=*), INTENT(IN) :: label
-    LOGICAL,          INTENT(IN) :: done
+    LOGICAL,          INTENT(IN) :: done, enabled
     !
-    IF (done) THEN
+    IF (.NOT. enabled) THEN
+       WRITE(stdout,'(5X,A,A)') TRIM(label), ' [DISABLED]'
+    ELSE IF (done) THEN
        WRITE(stdout,'(5X,A,A)') TRIM(label), ' [DONE - will skip]'
     ELSE
        WRITE(stdout,'(5X,A,A)') TRIM(label), ' [PENDING - will run]'

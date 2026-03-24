@@ -49,16 +49,25 @@ PROGRAM elph_manager
   USE elph_manager_input,    ONLY : elph_manager_readin,              &
                                     force_rerun_scf, force_rerun_ph,  &
                                     force_rerun_elph, verbose,        &
-                                    ph_split_qpoints, nq_irr
+                                    ph_split_qpoints, nq_irr,         &
+                                    compute_matdyn, compute_bands
   USE elph_manager_status,   ONLY : check_all_status,                 &
-                                    scf_done, dvscf_done, elph_done
-  USE elph_manager_generate, ONLY : generate_elph_input
-  USE elph_manager_run,      ONLY : run_scf, run_phonons, run_phonons_split, run_elph
+                                    scf_done, dvscf_done, elph_done,  &
+                                    matdyn_done, bands_done
+  USE elph_manager_generate, ONLY : generate_elph_input,              &
+                                    generate_q2r_input,               &
+                                    generate_matdyn_input,            &
+                                    generate_bands_input
+  USE elph_manager_run,      ONLY : run_scf, run_phonons,             &
+                                    run_phonons_split, run_elph,      &
+                                    run_q2r, run_matdyn, run_bands
   !
   IMPLICIT NONE
   !
   CHARACTER(LEN=12) :: code = 'ELPH_MANAGER'
   CHARACTER(LEN=256) :: ph_elph_input_file
+  CHARACTER(LEN=256) :: q2r_input_file, matdyn_input_file
+  CHARACTER(LEN=256) :: pw_bands_file, bandspp_file
   INTEGER :: ierr
   !
   ! ============================================================
@@ -89,9 +98,11 @@ PROGRAM elph_manager
   CALL check_all_status()
   !
   ! Apply force-rerun overrides
-  IF (force_rerun_scf)  scf_done   = .FALSE.
-  IF (force_rerun_ph)   dvscf_done = .FALSE.
-  IF (force_rerun_elph) elph_done  = .FALSE.
+  IF (force_rerun_scf)  scf_done    = .FALSE.
+  IF (force_rerun_ph)   dvscf_done  = .FALSE.
+  IF (force_rerun_elph) elph_done   = .FALSE.
+  IF (force_rerun_scf)  bands_done  = .FALSE.
+  IF (force_rerun_ph)   matdyn_done = .FALSE.
   !
   ! ============================================================
   ! Execute phases (only on ionode: manager runs serially,
@@ -119,7 +130,20 @@ PROGRAM elph_manager
              'Phase 2 (Phonons): SKIPPED — dvscf files found'
      END IF
      !
-     ! --- Phase 3: Electron-phonon coefficients ---
+     ! --- Phase 3: Phonon dispersion (optional) ---
+     IF (compute_matdyn) THEN
+        IF (.NOT. matdyn_done) THEN
+           CALL generate_q2r_input(q2r_input_file)
+           CALL run_q2r(q2r_input_file, ierr)
+           CALL generate_matdyn_input(matdyn_input_file)
+           CALL run_matdyn(matdyn_input_file, ierr)
+        ELSE
+           IF (verbose) WRITE(stdout,'(/,5X,A)') &
+                'Phase 3 (Matdyn): SKIPPED — matdyn.freq found'
+        END IF
+     END IF
+     !
+     ! --- Phase 4: Electron-phonon coefficients ---
      IF (.NOT. elph_done) THEN
         !
         ! Generate the ph.x input for this phase (trans=.false.)
@@ -129,7 +153,18 @@ PROGRAM elph_manager
         !
      ELSE
         IF (verbose) WRITE(stdout,'(/,5X,A)') &
-             'Phase 3 (Elph): SKIPPED — lambda/a2F files found'
+             'Phase 4 (Elph): SKIPPED — lambda/a2F files found'
+     END IF
+     !
+     ! --- Phase 5: Band structure (optional) ---
+     IF (compute_bands) THEN
+        IF (.NOT. bands_done) THEN
+           CALL generate_bands_input(pw_bands_file, bandspp_file)
+           CALL run_bands(pw_bands_file, bandspp_file, ierr)
+        ELSE
+           IF (verbose) WRITE(stdout,'(/,5X,A)') &
+                'Phase 5 (Bands): SKIPPED — bands.dat.gnu found'
+        END IF
      END IF
      !
      ! --- Summary ---
