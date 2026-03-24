@@ -1,5 +1,5 @@
 !
-! Copyright (C) 2024 Quantum ESPRESSO group
+! Authors: Sanjay Gopal Ramchandani, Fabian Jofré Parra
 ! This file is distributed under the terms of the
 ! GNU General Public License. See the file `License'
 ! in the root directory of the present distribution,
