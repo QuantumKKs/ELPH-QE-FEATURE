@@ -1,0 +1,10 @@
+&ELPH_MANAGER
+  prefix           = 'Al',
+  outdir           = 'run_test',
+  ph_input_file    = 'run_test/ph.in',
+  pw_command       = 'echo [pw.x]',
+  ph_command       = 'echo [ph.x]',
+  electron_phonon  = 'lambda_tetra',
+  nk1=16, nk2=16, nk3=16,
+  verbose          = .true.,
+/
