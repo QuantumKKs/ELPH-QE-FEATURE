@@ -75,7 +75,7 @@ elph_manager : pw ph
 - [ ] `README.md` explains the physics and usage
 - [ ] All source files have the standard QE license header:
   ```fortran
-  ! Copyright (C) 2024 Quantum ESPRESSO group
+  ! Authors: Sanjay Gopal Ramchandani, Fabian Jofré Parra
   ! This file is distributed under the terms of the
   ! GNU General Public License. See the file `License'
   ```

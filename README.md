@@ -138,7 +138,7 @@ elph_manager.x < elph_manager.in > elph_manager.out
 
 ## Authors
 
-Sanjay GR and collaborators (2024-2026). Contribution to the Quantum ESPRESSO community.
+Sanjay Gopal Ramchandani and Fabian Jofré Parra. Contribution to the Quantum ESPRESSO community.
 
 ## License
 
