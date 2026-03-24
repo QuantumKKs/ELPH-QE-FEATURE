@@ -288,7 +288,8 @@ CONTAINS
     WRITE(iunit_out,'(A)') "  flfrq   = 'matdyn.freq',"
     WRITE(iunit_out,'(A)') "  flvec   = 'matdyn.modes',"
     WRITE(iunit_out,'(A)') "  dos     = .false.,"
-    WRITE(iunit_out,'(A)') "  asr     = 'simple',"
+    WRITE(iunit_out,'(A)') "  asr              = 'simple',"
+    WRITE(iunit_out,'(A)') "  q_in_band_form   = .true.,"
     WRITE(iunit_out,'(A)') '/'
     !
     ! Append q-path from matdyn_qpath_file
