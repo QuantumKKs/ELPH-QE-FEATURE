@@ -34,7 +34,7 @@ QE_LIBS = \
     $(QE_ROOT)/LAXlib/libqela.a \
     $(QE_ROOT)/UtilXlib/libutil.a \
     $(QE_ROOT)/MBD/libmbd.a \
-    $(QE_ROOT)/devxlib/src/libdevXlib.a \
+    $(firstword $(wildcard $(QE_ROOT)/devxlib/src/libdevXlib.a $(QE_ROOT)/external/devxlib/src/libdevXlib.a)) \
     $(QE_ROOT)/dft-d3/libdftd3qe.a
 
 LIBS = $(QE_LIBS) \
