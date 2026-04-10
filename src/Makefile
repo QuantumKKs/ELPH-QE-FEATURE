@@ -21,7 +21,7 @@ ELPH_MGR_OBJS = \
     elph_mod_run.o      \
     elph_manager.o
 
-QE_ROOT = /Users/sanjaygrr/qe-build
+QE_ROOT = $(abspath ../..)
 
 QE_LIBS = \
     $(QE_ROOT)/PW/src/libpw.a \
